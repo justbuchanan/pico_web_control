@@ -1,0 +1,168 @@
+<html>
+<head>
+<style>
+#picopinout {
+    transform: rotate(-90deg) scale(2.5);
+}
+
+.pinrow {
+    height:  20;
+}
+</style>
+</head>
+
+
+<body>
+
+<h1>Pico W Control</h1>
+
+<table>
+    <tr>
+        <td>
+            <table>
+                <tr>
+                <td>LED</td><td><input type="checkbox" id="LED" onchange="pinChanged('LED');"></td>
+                </tr>
+            </table>
+        </td>
+        <td></td>
+        <td></td>
+    </tr>
+    <tr>
+        <td><table id="leftiotable"></table></td>
+        <td><img id="picopinout" src="pico.svg"></img></td>
+        <td><table id="rightiotable"></table></td>
+    </tr>
+
+    <tr>
+        <td></td>
+        <td><div id="lastUpdatedAtLabel"></div></td>
+        <td></td>
+    </tr>
+</table>
+
+
+<script type="text/javascript">
+    const base_addr = 'http://' + window.location.host;
+
+    // callback for when a pin's info is changed in the UI
+    function pinChanged(pinID) {
+        console.log("pin changed: " + pinID)
+
+        var checkbox = document.getElementById(pinID);
+        var inoutsel = document.getElementById(pinID + "_inout");
+
+        let inout = pinID == 'LED' ? 'Out' : inoutsel.value;
+
+        // send POST request to update gpio pin state
+        var xhr = new XMLHttpRequest();
+        xhr.open("POST", base_addr + "/update", true);
+        xhr.setRequestHeader('Content-Type', 'application/json');
+        xhr.send(JSON.stringify({
+            id: pinID,
+            value: checkbox.checked,
+            inout: inout,
+        }));
+        // TODO: handle errors
+
+        checkbox.disabled = inout == "In";
+        if (inout == "In") {
+            checkbox.checked = false;
+        }
+    }
+
+    function makePinRow(pin) {
+        var row = document.createElement("tr");
+        row.classList.add("pinrow");
+
+        var tdlabel = document.createElement("td");
+        tdlabel.innerHTML = pin.name;
+        row.appendChild(tdlabel);
+
+        if (pin.type == "digitalio") {
+            var inoutselect = document.createElement("select");
+            ["In", "Out"].forEach((name, i) => {
+                var opt = document.createElement("option");
+                opt.value = name;
+                opt.innerHTML = name;
+                inoutselect.appendChild(opt);
+            });
+            inoutselect.id = pin.id + "_inout";
+            inoutselect.onchange = () => {pinChanged(pin.id);}
+            var tdinoutselect = document.createElement("td");
+            tdinoutselect.appendChild(inoutselect);
+            row.appendChild(tdinoutselect);
+
+            var cb = document.createElement("input");
+            cb.type = "checkbox";
+            cb.name= pin.name;
+            cb.id = pin.id;
+            cb.value = true;
+            cb.disabled = true;
+            cb.onchange =() => {pinChanged(pin.id);}
+
+            var tdcb = document.createElement("td");
+            tdcb.appendChild(cb);
+            row.appendChild(tdcb);
+        } else {
+            row.appendChild(document.createElement("td"));
+            row.appendChild(document.createElement("td"));
+        }
+
+        return row;
+    };
+
+
+    function updateFromServer() {
+        fetch(base_addr + "/pinstates")
+        .then((response) => response.json())
+        .then((pinstates) => {
+            for (const pinID in pinstates) {
+                let pstate = pinstates[pinID];
+
+                if ('inout' in pstate) {
+                    var checkbox = document.getElementById(pinID);
+
+                    var inoutsel = document.getElementById(pinID + "_inout");
+                    if (inoutsel) {
+                        inoutsel.value = pstate['inout'];
+                    }
+
+                    checkbox.disabled = pstate['inout'] == "In";
+                    checkbox.checked = pstate['value'];
+                }
+            }
+
+            document.getElementById("lastUpdatedAtLabel").innerHTML = "Last updated at: " + new Date().toLocaleTimeString();
+        });
+        // TODO: handle errors
+    }
+
+    fetch(base_addr + "/pininfo")
+    .then((response) => response.json())
+    .then((pininfo) => {
+        console.log('fetched pin info');
+
+        var leftiotable = document.getElementById("leftiotable");
+        pininfo.slice(0, 20).forEach((pin, i) => {
+            leftiotable.appendChild(makePinRow(pin));
+        });
+
+        var rightiotable = document.getElementById("rightiotable");
+        pininfo.slice(20, 40).reverse().forEach((pin, i) => {
+            rightiotable.appendChild(makePinRow(pin));
+        });
+    })
+    .then(() => {
+        updateFromServer();
+
+        // update pin states every second
+        window.setInterval(() => {
+            updateFromServer();
+        }, 1000);
+    });
+    // TODO: handle errors
+</script>
+
+</body>
+</html>
