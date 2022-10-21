@@ -9,7 +9,7 @@ from pins import PinInfo
 pinstates = {}
 for p in PinInfo:
     pstate = {'value': False}
-    if p['type'] == 'digitalio':
+    if p['is_gpio']:
         pstate['inout'] = 'In'
     pinstates[p['id']] = pstate
 pinstates['LED'] = {'value': False, 'inout': 'Out'}

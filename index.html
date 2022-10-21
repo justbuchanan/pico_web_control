@@ -76,10 +76,10 @@
         row.classList.add("pinrow");
 
         var tdlabel = document.createElement("td");
-        tdlabel.innerHTML = pin.name;
+        tdlabel.innerHTML = pin.id;
         row.appendChild(tdlabel);
 
-        if (pin.type == "digitalio") {
+        if (pin.is_gpio) {
             var inoutselect = document.createElement("select");
             ["In", "Out"].forEach((name, i) => {
                 var opt = document.createElement("option");
@@ -95,7 +95,7 @@
 
             var cb = document.createElement("input");
             cb.type = "checkbox";
-            cb.name= pin.name;
+            cb.name= pin.id;
             cb.id = pin.id;
             cb.value = true;
             cb.disabled = true;

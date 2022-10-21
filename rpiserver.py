@@ -13,7 +13,7 @@ from pins import PinInfo
 # init all gpio pins to INPUT state and store in a dict mapped by id
 pins = {}
 for pininfo in PinInfo:
-    if pininfo["type"] != "digitalio":
+    if not pininfo["is_gpio"]:
         continue
     io = digitalio.DigitalInOut(getattr(board, pininfo["id"]))
     io.direction = digitalio.Direction.INPUT
@@ -68,9 +68,9 @@ def update(request):
 @server.route("/pinstates")
 def pinstates(request):
     states = {}
-    for name, pin in pins.items():
-        states[name] = {
-            "id": name,
+    for pinID, pin in pins.items():
+        states[pinID] = {
+            "id": pinID,
             "inout":
             'In' if pin.direction == digitalio.Direction.INPUT else 'Out',
             "value": pin.value,
