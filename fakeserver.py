@@ -16,7 +16,6 @@ pinstates['LED'] = {'value': False, 'inout': 'Out'}
 
 
 class FakePicoWServer(BaseHTTPRequestHandler):
-
     def do_GET(self):
         # logging.info("GET request,\nPath: %s", str(self.path))
 

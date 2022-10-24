@@ -78,6 +78,7 @@ def pinstates(request):
     return HTTPResponse(content_type="application/json",
                         body=json.dumps(states))
 
+
 @server.route("/pininfo")
 def pininfo(request):
     return HTTPResponse(content_type="application/json",
